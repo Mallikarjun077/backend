@@ -1,4 +1,5 @@
-MONGO_URI=mongodb://localhost:27017
+MONGO_URI = "mongodb+srv://admin:Easy12%21%40%40cluster0@cluster0.zqz0dfp.mongodb.net/matri?retryWrites=true&w=majority&appName=Cluster0"
+
 JWT_SECRET=e205eca4133bdfba60eeead3e848c0bb317b9ab6385174de650e2af37400e4a2
 JWT_ALGORITHM=HS256
 
