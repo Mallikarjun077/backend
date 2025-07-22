@@ -18,26 +18,28 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)):
 
 # --- Save Profile (POST) ---
 @router.post("/profile/")
-async def save_profile(data: Profile, user=Depends(get_current_user)):
+async def save_profile(data: Profile):
     try:
-        user_id = str(user["sub"])
         data_dict = data.dict()
-        data_dict["user_id"] = user_id
+        user_email = data_dict.get("email")
+        if not user_email:
+            raise HTTPException(status_code=400, detail="Email is required")
 
+        # Handle image
         if data_dict.get("image_base64"):
             print("✅ Received base64 image")
-            # Directly store base64 in DB
             data_dict["image_path"] = data_dict["image_base64"]
             data_dict.pop("image_base64", None)
 
         print("📦 Final data saving to DB:", data_dict)
-        await profiles.update_one({"user_id": user_id}, {"$set": data_dict}, upsert=True)
+        await profiles.update_one({"email": user_email}, {"$set": data_dict}, upsert=True)
 
         return {"message": "Profile saved successfully"}
 
     except Exception as e:
         print("❌ Error saving profile:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # --- Get Own Profile (GET) ---
