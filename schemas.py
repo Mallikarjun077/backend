@@ -12,7 +12,7 @@ class UserLogin(BaseModel):
     password: str
 
 class TokenResponse(BaseModel):
-    token: str
+    access: str
     email: EmailStr
 
 class Profile(BaseModel):
