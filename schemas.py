@@ -12,7 +12,8 @@ class UserLogin(BaseModel):
     password: str
 
 class TokenResponse(BaseModel):
-    access: str
+    token: str
+    email: EmailStr
 
 class Profile(BaseModel):
     # user_id: str
