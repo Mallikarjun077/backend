@@ -53,7 +53,7 @@ async def register(data: UserRegister):
     await users.insert_one(user_data)
 
     token = create_token(data.email)
-    return {"token": token, "email": data.email}
+    return {"access": token, "email": data.email}
 
 # 🔐 Login
 @router.post("/login/", response_model=TokenResponse)
@@ -63,4 +63,4 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token(data.email)
-    return {"token": token, "email": data.email}
+    return {"access": token, "email": data.email}
