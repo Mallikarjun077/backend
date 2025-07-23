@@ -20,35 +20,30 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)):
         if not email:
             raise HTTPException(status_code=403, detail="Token missing subject (email)")
         return email
-    except JWTError as e:
+    except JWTError:
         raise HTTPException(status_code=403, detail="Invalid or expired token")
-
 
 # --- Save or Update Profile ---
 @router.post("/profile/")
 async def save_profile(data: Profile, user_email: str = Depends(get_current_user)):
     try:
         data_dict = data.dict()
-
-        # Force use of authenticated email
         data_dict["email"] = user_email
-        data_dict["user_id"] = user_email  # Optional: for filtering
+        data_dict["user_id"] = user_email
 
-        # Handle image_base64 → image_path
         if data_dict.get("image_base64"):
             data_dict["image_path"] = data_dict.pop("image_base64")
 
         await profiles.update_one(
-            {"email": user_email},  # Filter
-            {"$set": data_dict},    # Data to update/set
-            upsert=True             # Insert if not exists
+            {"email": user_email},
+            {"$set": data_dict},
+            upsert=True
         )
 
         return {"message": "Profile saved successfully"}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error saving profile: {str(e)}")
-
 
 # --- Get Own Profile ---
 @router.get("/profile/")
@@ -57,11 +52,9 @@ async def get_profile(user_email: str = Depends(get_current_user)):
     if not profile:
         raise HTTPException(status_code=404, detail="No profile found")
 
-    # Format MongoDB ID and image path
     profile["_id"] = str(profile["_id"])
     profile["image"] = profile.get("image_path", "")
     return profile
-
 
 # --- Get All Other Users' Profiles ---
 @router.get("/all-profiles/")

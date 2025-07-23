@@ -7,6 +7,10 @@ from reset import router as reset_router
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Welcome to the FastAPI backend"}
+
 # ✅ Allow requests from frontend (adjust origin in production)
 app.add_middleware(
     CORSMiddleware,
