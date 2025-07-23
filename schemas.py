@@ -13,7 +13,6 @@ class UserLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     access: str
-    email: EmailStr
 
 class Profile(BaseModel):
     # user_id: str
