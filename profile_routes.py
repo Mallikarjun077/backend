@@ -23,6 +23,8 @@ async def save_profile(data: Profile, user=Depends(get_current_user)):
         user_id = str(user["sub"])
         data_dict = data.dict()
         data_dict["user_id"] = user_id
+        print("📝 Saving profile for user_id:", user_id)  # ✅ Add this
+
 
         if data_dict.get("image_base64"):
             print("✅ Received base64 image")
@@ -44,6 +46,8 @@ async def save_profile(data: Profile, user=Depends(get_current_user)):
 @router.get("/profile/")
 async def get_profile(user=Depends(get_current_user)):
     user_id = str(user["sub"])
+    print("🔍 Fetching profile for user_id:", user_id)  # ✅ Add this
+
     profile = await profiles.find_one({"user_id": user_id})
     if not profile:
         raise HTTPException(status_code=404, detail="No profile found")
