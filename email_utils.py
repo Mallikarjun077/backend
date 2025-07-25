@@ -41,8 +41,9 @@ async def send_profile_liked_email(to_email: EmailStr, liker_name: str):
         recipients=[to_email],
         body=f"""
         Hello,
+        {liker_name}
 
-        {liker_name} liked your profile on Nekar Vivah Vedike App!
+        liked your profile on Nekar Vivah Vedike App!
         Open the app and see who is interested in you.
 
         Regards,

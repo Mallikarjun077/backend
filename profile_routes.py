@@ -6,6 +6,8 @@ from jose import jwt, JWTError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from schemas import LikeRequest
 from email_utils import send_profile_liked_email
+from database import profiles, users  # Make sure 'users' is imported from your DB setup
+
 
 router = APIRouter()
 security = HTTPBearer()
@@ -70,6 +72,8 @@ async def get_all_profiles(user=Depends(get_current_user)):
     return all_profiles
 
 # --- Like a profile ---
+from database import profiles, users  # Make sure 'users' is imported from your DB setup
+
 @router.post("/like/")
 async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
     current_user_id = str(user["sub"])
@@ -98,11 +102,18 @@ async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
         {"$addToSet": {"liked_by": current_user_id}}
     )
 
-    # Send notification email
-    liked_user_email = liked_profile.get("email")
+    # ✅ Get email from users collection
+    liked_user_doc = await users.find_one({"_id": data.liked_user_id})
+    liked_user_email = liked_user_doc.get("email") if liked_user_doc else None
     liker_name = liker_profile.get("name", "Someone")
 
     if liked_user_email:
         await send_profile_liked_email(liked_user_email, liker_name)
 
     return {"message": f"You liked {liked_profile.get('name', 'this user')}"}
+
+
+@router.get("/test-email/")
+async def test_email():
+    await send_profile_liked_email("shirwalmallu@gmail.com", "Mallikarjun")
+    return {"status": "sent"}
