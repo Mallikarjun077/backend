@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional,List
 
 
 class UserRegister(BaseModel):
@@ -13,6 +13,9 @@ class UserLogin(BaseModel):
 
 class TokenResponse(BaseModel):
     access: str
+
+class LikeRequest(BaseModel):
+    liked_user_id: str    
 
 class Profile(BaseModel):
     # user_id: str
@@ -49,4 +52,7 @@ class Profile(BaseModel):
     socialMedia: Optional[str] = None
     about: Optional[str] = None
     image_base64: Optional[str] = None
+    liked_profiles: Optional[List[str]] = []  # user_ids this user liked
+    liked_by: Optional[List[str]] = []        # user_ids who liked this user
+
 

@@ -1,6 +1,8 @@
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from random import randint
 from config import settings
+from pydantic import EmailStr
+
 
 # ✅ Email config
 conf = ConnectionConfig(
@@ -9,18 +11,16 @@ conf = ConnectionConfig(
     MAIL_FROM=settings.MAIL_FROM,
     MAIL_PORT=settings.MAIL_PORT,
     MAIL_SERVER=settings.MAIL_SERVER,
-    MAIL_STARTTLS=True,         # STARTTLS
-    MAIL_SSL_TLS=False,         # Not using SSL
+    MAIL_STARTTLS=True,        
+    MAIL_SSL_TLS=False,         
     USE_CREDENTIALS=True,
-    TEMPLATE_FOLDER="email_templates"  # Folder must exist
+    TEMPLATE_FOLDER="email_templates"  
 )
 
 fm = FastMail(conf)
 
-# ⚠️ For demo only — use a database in production
 otp_store = {}
 
-# ✅ Send OTP email using template
 async def send_otp(email: str,name: str):
     otp = str(randint(100000, 999999))
     otp_store[email] = otp
@@ -34,3 +34,22 @@ async def send_otp(email: str,name: str):
 
     await fm.send_message(msg, template_name="otp_template.html")
     return otp
+
+async def send_profile_liked_email(to_email: EmailStr, liker_name: str):
+    message = MessageSchema(
+        subject="Someone liked your profile!",
+        recipients=[to_email],
+        body=f"""
+        Hello,
+
+        {liker_name} liked your profile on Nekar Vivah Vedike App!
+        Open the app and see who is interested in you.
+
+        Regards,
+        Nekar Vivah Vedike Team
+        """,
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)

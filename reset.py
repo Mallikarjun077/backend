@@ -21,10 +21,8 @@ async def request_reset(data: EmailRequest):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Get the name from the database
     name = user.get("username", "User")  
 
-    # Send OTP with the user's name
     await send_otp(data.email, name)
     return {"message": "OTP sent to email"}
 

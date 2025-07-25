@@ -11,10 +11,10 @@ app = FastAPI()
 def root():
     return {"message": "Welcome to the FastAPI backend"}
 
-# ✅ Allow requests from frontend (adjust origin in production)
+# Allow requests from frontend (adjust origin in production)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict to ["http://localhost:3000"] or your mobile IP
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
