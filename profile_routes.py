@@ -72,45 +72,51 @@ async def get_all_profiles(user=Depends(get_current_user)):
     return all_profiles
 
 # --- Like a profile ---
-from database import profiles, users  # Make sure 'users' is imported from your DB setup
+
+
 
 @router.post("/like/")
 async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
     current_user_id = str(user["sub"])
+
+    # Get both liker and liked profiles
     liker_profile = await profiles.find_one({"user_id": current_user_id})
     liked_profile = await profiles.find_one({"user_id": data.liked_user_id})
 
     if not liker_profile or not liked_profile:
         raise HTTPException(status_code=404, detail="Profile not found")
-
+    
     if data.liked_user_id == current_user_id:
         raise HTTPException(status_code=400, detail="You cannot like your own profile")
 
-    # Check if already liked
     if data.liked_user_id in liker_profile.get("liked_profiles", []):
         raise HTTPException(status_code=400, detail="Already liked")
 
-    # Update liker: add to liked_profiles
+    # Update liked_profiles and liked_by
     await profiles.update_one(
         {"user_id": current_user_id},
         {"$addToSet": {"liked_profiles": data.liked_user_id}}
     )
-
-    # Update liked user: add to liked_by
     await profiles.update_one(
         {"user_id": data.liked_user_id},
         {"$addToSet": {"liked_by": current_user_id}}
     )
 
-    # ✅ Get email from users collection
+    # ✅ Get email from users collection (IMPORTANT PART)
     liked_user_doc = await users.find_one({"_id": data.liked_user_id})
     liked_user_email = liked_user_doc.get("email") if liked_user_doc else None
+
+    print("👉 Liked User Email:", liked_user_email)
+
     liker_name = liker_profile.get("name", "Someone")
 
     if liked_user_email:
         await send_profile_liked_email(liked_user_email, liker_name)
+    else:
+        print("⚠️ Email not found for liked user")
 
     return {"message": f"You liked {liked_profile.get('name', 'this user')}"}
+
 
 
 @router.get("/test-email/")
