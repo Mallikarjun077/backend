@@ -6,7 +6,7 @@ from jose import jwt, JWTError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from schemas import LikeRequest
 from email_utils import send_profile_liked_email
-from database import profiles, users  # Make sure 'users' is imported from your DB setup
+from database import profiles, users  
 from bson import ObjectId
 
 

@@ -2,6 +2,8 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from random import randint
 from config import settings
 from pydantic import EmailStr
+from datetime import datetime
+
 
 
 # ✅ Email config
@@ -35,16 +37,22 @@ async def send_otp(email: str,name: str):
     await fm.send_message(msg, template_name="otp_template.html")
     return otp
 
-async def send_profile_liked_email(email: EmailStr, liker_name: str):
+async def send_profile_liked_email(email: EmailStr, liker_name: str, liker_age: str, liker_photo_url: str, recipient_name: str = None):
     try:
         message = MessageSchema(
             subject="Someone Liked Your Profile!",
             recipients=[email],
-            body=f"Hi,\n\n{liker_name} liked your profile on our Matri App!\nCheck it out!",
-            subtype="plain"
+            template_body={
+                "liker_name": liker_name,
+                "liker_age": liker_age,
+                "liker_photo": liker_photo_url,
+                "name": recipient_name,
+                "current_year": datetime.now().year
+            },
+            subtype="html"
         )
-        fm = FastMail(conf)
-        await fm.send_message(message)
-        print(f"✅ Email sent to {email}")
+
+        await fm.send_message(message, template_name="profile_liked_template.html")
+        print(f"✅ HTML email sent to {email}")
     except Exception as e:
         print(f"❌ Failed to send email to {email}: {e}")
