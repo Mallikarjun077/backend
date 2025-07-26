@@ -37,15 +37,15 @@ async def send_otp(email: str,name: str):
     await fm.send_message(msg, template_name="otp_template.html")
     return otp
 
-async def send_profile_liked_email(email: EmailStr, liker_name: str, liker_age: str, liker_photo_url: str, recipient_name: str = None):
+async def send_profile_liked_email(email: EmailStr, liker_name: str,  recipient_name: str = None):
     try:
         message = MessageSchema(
             subject="Someone Liked Your Profile!",
             recipients=[email],
             template_body={
                 "liker_name": liker_name,
-                "liker_age": liker_age,
-                "liker_photo": liker_photo_url,
+                # "liker_age": liker_age,
+                # "liker_photo": liker_photo_url,
                 "name": recipient_name,
                 "current_year": datetime.now().year
             },
