@@ -35,22 +35,16 @@ async def send_otp(email: str,name: str):
     await fm.send_message(msg, template_name="otp_template.html")
     return otp
 
-async def send_profile_liked_email(to_email: EmailStr, liker_name: str):
-    message = MessageSchema(
-        subject="Someone liked your profile!",
-        recipients=[to_email],
-        body=f"""
-        Hello,
-        {liker_name}
-
-        liked your profile on Nekar Vivah Vedike App!
-        Open the app and see who is interested in you.
-
-        Regards,
-        Nekar Vivah Vedike Team
-        """,
-        subtype="plain"
-    )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+async def send_profile_liked_email(email: EmailStr, liker_name: str):
+    try:
+        message = MessageSchema(
+            subject="Someone Liked Your Profile!",
+            recipients=[email],
+            body=f"Hi,\n\n{liker_name} liked your profile on our Matri App!\nCheck it out!",
+            subtype="plain"
+        )
+        fm = FastMail(conf)
+        await fm.send_message(message)
+        print(f"✅ Email sent to {email}")
+    except Exception as e:
+        print(f"❌ Failed to send email to {email}: {e}")
