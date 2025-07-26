@@ -52,7 +52,7 @@ async def send_profile_liked_email(email: EmailStr, liker_name: str,  recipient_
             subtype="html"
         )
 
-        await fm.send_message(message, template_name="profile_liked_template.html")
+        await fm.send_message(message, template_name="Liked.html")
         print(f"✅ HTML email sent to {email}")
     except Exception as e:
         print(f"❌ Failed to send email to {email}: {e}")
