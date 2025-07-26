@@ -2,6 +2,13 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional,List
 
 
+
+class PreProfile(BaseModel):
+    name: str
+    gender: str
+    religion: str
+    caste: str
+
 class UserRegister(BaseModel):
     username: str
     email: EmailStr
