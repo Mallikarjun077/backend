@@ -74,7 +74,6 @@ async def get_all_profiles(user=Depends(get_current_user)):
 
 # --- Like a profile ---
 
-
 @router.post("/like/")
 async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
     current_user_id = str(user["sub"])
@@ -102,9 +101,10 @@ async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
         {"$addToSet": {"liked_by": current_user_id}}
     )
 
-    # --- Get liked user's email from 'users' collection ---
+    # ✅ Get user_id from liked profile and use it to fetch email
     try:
-        liked_user_doc = await users.find_one({"_id": ObjectId(data.liked_user_id)})
+        liked_user_id = liked_profile["user_id"]
+        liked_user_doc = await users.find_one({"_id": ObjectId(liked_user_id)})
         liked_user_email = liked_user_doc.get("email") if liked_user_doc else None
     except Exception as e:
         print("❌ Failed to fetch liked user's email:", e)
@@ -114,7 +114,6 @@ async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
 
     liker_name = liker_profile.get("name", "Someone")
 
-    # --- Send Email ---
     if liked_user_email:
         await send_profile_liked_email(liked_user_email, liker_name)
     else:
