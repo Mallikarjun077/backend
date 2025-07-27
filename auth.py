@@ -17,11 +17,20 @@ def create_token(user_id: str):
     to_encode = {"sub": user_id, "exp": expire}
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-# ✅ 1. Save pre-profile (before registration)
 @router.post("/pre-profile/")
 async def create_pre_profile(data: PreProfile):
     pre_data = data.dict()
+
+    # Optional: rename `image_base64` to `image_path` for consistency
+    if pre_data.get("image_base64"):
+        print("✅ Received base64 image")
+        pre_data["image_path"] = pre_data.pop("image_base64")
+
+    pre_data["created_at"] = datetime.utcnow()
+
     result = await db["pre_profiles"].insert_one(pre_data)
+    print("📦 Saved pre-profile:", pre_data)
+
     return {"pre_profile_id": str(result.inserted_id)}
 
 
