@@ -34,6 +34,7 @@ async def create_pre_profile(data: PreProfile):
     return {"pre_profile_id": str(result.inserted_id)}
 
 
+
 # ✅ 2. Register user and link profile
 @router.post("/register/")
 async def register(data: UserRegister, pre_profile_id: str = None):

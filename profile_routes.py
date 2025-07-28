@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import Profile
+from schemas import Profile,PreProfile
 from database import profiles
 from auth import settings
 from jose import jwt, JWTError
@@ -8,6 +8,11 @@ from schemas import LikeRequest
 from email_utils import send_profile_liked_email
 from database import profiles, users  
 from bson import ObjectId
+from fastapi.encoders import jsonable_encoder
+from bson import ObjectId
+
+from database import profiles, users, db  # ✅ Added db here
+
 
 
 router = APIRouter()
@@ -20,6 +25,18 @@ def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)):
         return payload  
     except JWTError:
         raise HTTPException(status_code=403, detail="Invalid token")
+    
+
+@router.get("/pre-profile/{pre_profile_id}")
+async def get_pre_profile(pre_profile_id: str, user=Depends(get_current_user)):
+    profile = await db["pre_profiles"].find_one({"_id": ObjectId(pre_profile_id)})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Pre-profile not found")
+
+    profile["_id"] = str(profile["_id"])
+    return jsonable_encoder(profile)
+
+
 
 # --- Save Profile (POST) ---
 @router.post("/profile/")
