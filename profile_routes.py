@@ -1,44 +1,41 @@
 from fastapi import APIRouter, Depends, HTTPException
-from schemas import Profile,PreProfile
-from database import profiles
+from schemas import Profile, PreProfile, LikeRequest,MasterData
+from database import profiles, users, db
 from auth import settings
-from jose import jwt, JWTError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from schemas import LikeRequest
-from email_utils import send_profile_liked_email
-from database import profiles, users  
-from bson import ObjectId
+from jose import jwt, JWTError
 from fastapi.encoders import jsonable_encoder
 from bson import ObjectId
-
-from database import profiles, users, db  # ✅ Added db here
-
-
+from email_utils import send_profile_liked_email
 
 router = APIRouter()
 security = HTTPBearer()
 
-# --- Decode JWT ---
+# --- Decode JWT Token ---
 def get_current_user(token: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(token.credentials, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        return payload  
+        return payload
     except JWTError:
         raise HTTPException(status_code=403, detail="Invalid token")
-    
 
-@router.get("/pre-profile/{pre_profile_id}")
-async def get_pre_profile(pre_profile_id: str, user=Depends(get_current_user)):
-    profile = await db["pre_profiles"].find_one({"_id": ObjectId(pre_profile_id)})
+
+# --- Get Your Pre-Profile ---
+@router.get("/pre-profile/me")
+async def get_my_pre_profile(user=Depends(get_current_user)):
+    user_id = str(user["sub"])
+    profile = await db["pre_profiles"].find_one({"user_id": user_id})
     if not profile:
         raise HTTPException(status_code=404, detail="Pre-profile not found")
-
+    
     profile["_id"] = str(profile["_id"])
     return jsonable_encoder(profile)
 
 
 
-# --- Save Profile (POST) ---
+
+
+# # --- Save Full Profile ---
 @router.post("/profile/")
 async def save_profile(data: Profile, user=Depends(get_current_user)):
     try:
@@ -55,13 +52,12 @@ async def save_profile(data: Profile, user=Depends(get_current_user)):
         await profiles.update_one({"user_id": user_id}, {"$set": data_dict}, upsert=True)
 
         return {"message": "Profile saved successfully"}
-
     except Exception as e:
         print("❌ Error saving profile:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- Get Own Profile (GET) ---
+# # --- Get Own Profile ---
 @router.get("/profile/")
 async def get_profile(user=Depends(get_current_user)):
     user_id = str(user["sub"])
@@ -70,12 +66,11 @@ async def get_profile(user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="No profile found")
 
     profile["_id"] = str(profile["_id"])
-    profile["image"] = profile.get("image_path", "")  
-
+    profile["image"] = profile.get("image_path", "")
     return profile
 
 
-# --- Get All Other Profiles (GET) ---
+# --- Get All Other Profiles ---
 @router.get("/all-profiles/")
 async def get_all_profiles(user=Depends(get_current_user)):
     current_user_id = str(user["sub"])
@@ -84,13 +79,13 @@ async def get_all_profiles(user=Depends(get_current_user)):
 
     async for profile in profiles_cursor:
         profile["_id"] = str(profile["_id"])
-        profile["image"] = profile.get("image_path", "")  
+        profile["image"] = profile.get("image_path", "")
         all_profiles.append(profile)
 
     return all_profiles
 
-# --- Like a profile ---
 
+# --- Like a Profile ---
 @router.post("/like/")
 async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
     current_user_id = str(user["sub"])
@@ -118,7 +113,7 @@ async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
         {"$addToSet": {"liked_by": current_user_id}}
     )
 
-    # ✅ Get user_id from liked profile and use it to fetch email
+    # Fetch liked user's email
     try:
         liked_user_id = liked_profile["user_id"]
         liked_user_doc = await users.find_one({"_id": ObjectId(liked_user_id)})
@@ -137,3 +132,18 @@ async def like_profile(data: LikeRequest, user=Depends(get_current_user)):
         print("⚠️ Email not found for liked user")
 
     return {"message": f"You liked {liked_profile.get('name', 'this user')}"}
+
+@router.post("/masters/", tags=["Masters"])
+async def create_master(data: MasterData):
+    existing = await db["masters"].find_one({"type": data.type})
+    if existing:
+        raise HTTPException(status_code=400, detail="Master type already exists")
+    await db["masters"].insert_one(data.dict())
+    return {"message": "Master created"}
+
+@router.get("/masters/{type}", tags=["Masters"])
+async def get_master(type: str):
+    data = await db["masters"].find_one({"type": type})
+    if not data:
+        raise HTTPException(status_code=404, detail="Master not found")
+    return data["values"]

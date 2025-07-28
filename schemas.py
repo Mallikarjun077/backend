@@ -96,3 +96,6 @@ class Profile(BaseModel):
     liked_by: Optional[List[str]] = []        # user_ids who liked this user
 
 
+class MasterData(BaseModel):
+    type: str                  
+    values: List[str] 

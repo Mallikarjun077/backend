@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from auth import router as auth_router
 from profile_routes import router as profile_router
 from reset import router as reset_router
+from fastapi.openapi.utils import get_openapi
 
 app = FastAPI()
 
@@ -23,4 +24,3 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(profile_router, prefix="/api")
 app.include_router(reset_router, prefix="/api")
-
