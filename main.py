@@ -47,3 +47,4 @@ async def insert_master_data():
     await safe_insert("gender", ["Male", "Female", "Other"])
     await safe_insert("language", ["Kannada", "Hindi", "Telugu", "Tamil", "Marathi", "Malayalam", "English", "Urdu", "Other"])
     await safe_insert("mother_tongue", ["Hindi", "English", "Kannada", "Telugu", "Tamil", "Malayalam", "Marathi", "Gujarati", "Punjabi", "Bengali", "Urdu", "Odia", "Assamese", "Rajasthani", "Sindhi", "Konkani", "Tulu", "Other"])
+    

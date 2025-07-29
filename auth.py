@@ -31,19 +31,28 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+from typing import Optional
+from fastapi import Header
+
 @router.post("/pre-profile/")
-async def create_pre_profile(data: PreProfile, token: str = Depends(oauth2_scheme)):
+async def create_pre_profile(
+    data: PreProfile,
+    authorization: Optional[str] = Header(None)
+):
     pre_data = data.dict()
     pre_data["created_at"] = datetime.utcnow()
 
-    # Optional: attach user_id if token is present
-    try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id:
-            pre_data["user_id"] = user_id
-    except JWTError:
-        pass  # Token not required to create pre-profile
+    # Optional: attach user_id if Authorization header is provided
+    if authorization:
+        try:
+            scheme, token = authorization.split()
+            if scheme.lower() == "bearer":
+                payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+                user_id: str = payload.get("sub")
+                if user_id:
+                    pre_data["user_id"] = user_id
+        except (ValueError, JWTError):
+            pass  # Ignore token errors for pre-profile
 
     result = await db["pre_profiles"].insert_one(pre_data)
     return {"pre_profile_id": str(result.inserted_id)}
@@ -76,10 +85,3 @@ async def login(data: UserLogin):
     token = create_token(str(user["_id"]))
     return {"access": token}
 
-@router.get("/pre-profile/me")
-async def get_my_pre_profile(user=Depends(get_current_user)):
-    pre_profile = await db["pre_profiles"].find_one({"user_id": str(user["_id"])})
-    if not pre_profile:
-        raise HTTPException(status_code=404, detail="Pre-profile not found")
-    pre_profile["_id"] = str(pre_profile["_id"])
-    return pre_profile
