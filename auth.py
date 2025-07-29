@@ -4,13 +4,13 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from database import db, users
-from schemas import UserRegister, UserLogin, TokenResponse, PreProfile
+from schemas import UserRegister, UserLogin, TokenResponse, PreProfile, RegisterWithProfile
 from config import settings
 from bson import ObjectId
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login/")  # Important: Must match route
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login/")
 
 def create_token(user_id: str):
     expire = datetime.utcnow() + timedelta(hours=6)
@@ -21,7 +21,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         user_id: str = payload.get("sub")
-        if user_id is None:
+        if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token payload")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -31,57 +31,46 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-from typing import Optional
-from fastapi import Header
-
-@router.post("/pre-profile/")
-async def create_pre_profile(
-    data: PreProfile,
-    authorization: Optional[str] = Header(None)
-):
-    pre_data = data.dict()
-    pre_data["created_at"] = datetime.utcnow()
-
-    # Optional: attach user_id if Authorization header is provided
-    if authorization:
-        try:
-            scheme, token = authorization.split()
-            if scheme.lower() == "bearer":
-                payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-                user_id: str = payload.get("sub")
-                if user_id:
-                    pre_data["user_id"] = user_id
-        except (ValueError, JWTError):
-            pass  # Ignore token errors for pre-profile
-
-    result = await db["pre_profiles"].insert_one(pre_data)
-    return {"pre_profile_id": str(result.inserted_id)}
-
-
-
-@router.post("/register/")
-async def register(data: UserRegister, pre_profile_id: str = None):
+# ✅ Combined Register + Profile + Token
+@router.post("/register_with_profile/", response_model=TokenResponse)
+async def register_with_profile(data: RegisterWithProfile):
+    # Check email
     if await users.find_one({"email": data.email}):
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Create user
     hashed = pwd_context.hash(data.password)
-    user = {"username": data.username, "email": data.email, "password": hashed}
-    result = await users.insert_one(user)
-    user_id = str(result.inserted_id)
+    user_doc = {
+        "username": data.username,
+        "email": data.email,
+        "password": hashed
+    }
+    user_result = await users.insert_one(user_doc)
+    user_id = str(user_result.inserted_id)
 
-    if pre_profile_id:
-        await db["pre_profiles"].update_one(
-            {"_id": ObjectId(pre_profile_id)},
-            {"$set": {"user_id": user_id}}
-        )
+    # Create profile
+    profile_data = data.pre_profile.dict()
+    profile_data["user_id"] = user_id
+    profile_data["created_at"] = datetime.utcnow()
+    await db["pre_profiles"].insert_one(profile_data)
 
-    return {"message": "User created", "user_id": user_id}
+    token = create_token(user_id)
+    return {"access": token}
 
+# 🔐 Login
 @router.post("/login/", response_model=TokenResponse)
 async def login(data: UserLogin):
     user = await users.find_one({"email": data.email})
     if not user or not pwd_context.verify(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
     token = create_token(str(user["_id"]))
     return {"access": token}
 
+# 🔎 Get Profile for Logged-in User
+@router.get("/pre-profile/me")
+async def get_my_pre_profile(user=Depends(get_current_user)):
+    profile = await db["pre_profiles"].find_one({"user_id": str(user["_id"])})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Pre-profile not found")
+    profile["_id"] = str(profile["_id"])
+    return profile

@@ -99,3 +99,9 @@ class Profile(BaseModel):
 class MasterData(BaseModel):
     type: str                  
     values: List[str] 
+
+class RegisterWithProfile(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    pre_profile: PreProfile    
