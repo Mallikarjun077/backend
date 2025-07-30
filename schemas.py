@@ -37,6 +37,8 @@ class PreProfile(BaseModel):
     socialMedia: Optional[str] = None
     about: Optional[str] = None
     image_base64: Optional[str] = None
+    liked_profiles: Optional[List[str]] = []  # user_ids this user liked
+    liked_by: Optional[List[str]] = [] 
        # user_ids who liked this user
 
 
@@ -92,8 +94,7 @@ class Profile(BaseModel):
     socialMedia: Optional[str] = None
     about: Optional[str] = None
     image_base64: Optional[str] = None
-    liked_profiles: Optional[List[str]] = []  # user_ids this user liked
-    liked_by: Optional[List[str]] = []        # user_ids who liked this user
+         # user_ids who liked this user
 
 
 class MasterData(BaseModel):
