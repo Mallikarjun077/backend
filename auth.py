@@ -80,7 +80,7 @@ async def get_my_pre_profile(user=Depends(get_current_user)):
 
 @router.get("/pre-profiles/all")
 async def get_all_pre_profiles(user=Depends(get_current_user)):
-    current_user_id = str(user["sub"])
+    current_user_id = str(user["_id"])
 
     # Fetch all pre-profiles except the current user's
     cursor = db["pre_profiles"].find({"user_id": {"$ne": current_user_id}})
@@ -91,3 +91,4 @@ async def get_all_pre_profiles(user=Depends(get_current_user)):
         pre_profiles.append(jsonable_encoder(profile))
 
     return pre_profiles
+
