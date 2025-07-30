@@ -85,6 +85,7 @@ async def get_all_profiles(user=Depends(get_current_user)):
     return all_profiles
 
 
+
 # --- Like a Profile ---
 @router.post("/like/")
 async def like_profile(data: LikeRequest, user=Depends(get_current_user)):

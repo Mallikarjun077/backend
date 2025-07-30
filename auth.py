@@ -7,6 +7,7 @@ from database import db, users
 from schemas import UserRegister, UserLogin, TokenResponse, PreProfile, RegisterWithProfile
 from config import settings
 from bson import ObjectId
+from fastapi.encoders import jsonable_encoder
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -74,3 +75,19 @@ async def get_my_pre_profile(user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Pre-profile not found")
     profile["_id"] = str(profile["_id"])
     return profile
+
+# --- Get All Pre-Profiles (excluding current user) ---
+
+@router.get("/pre-profiles/all")
+async def get_all_pre_profiles(user=Depends(get_current_user)):
+    current_user_id = str(user["sub"])
+
+    # Fetch all pre-profiles except the current user's
+    cursor = db["pre_profiles"].find({"user_id": {"$ne": current_user_id}})
+    pre_profiles = []
+
+    async for profile in cursor:
+        profile["_id"] = str(profile["_id"])
+        pre_profiles.append(jsonable_encoder(profile))
+
+    return pre_profiles
