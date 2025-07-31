@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,Body
 from schemas import Profile, PreProfile, LikeRequest,MasterData
 from database import profiles, users, db
 from auth import settings
@@ -31,6 +31,26 @@ async def get_my_pre_profile(user=Depends(get_current_user)):
     profile["_id"] = str(profile["_id"])
     return jsonable_encoder(profile)
 
+@router.put("/pre-profile/me")
+async def update_my_pre_profile(
+    updated_data: dict = Body(...),  # receives JSON body as dictionary
+    user=Depends(get_current_user)
+):
+    user_id = str(user["sub"])  # assuming "sub" is your user ID from JWT
+
+    result = await db["pre_profiles"].update_one(
+        {"user_id": user_id},
+        {"$set": updated_data}
+    )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Pre-profile not found")
+
+    # Return updated profile
+    updated_profile = await db["pre_profiles"].find_one({"user_id": user_id})
+    updated_profile["_id"] = str(updated_profile["_id"])
+
+    return jsonable_encoder(updated_profile)
 
 
 
@@ -151,3 +171,4 @@ async def get_master(type: str):
     if not data:
         raise HTTPException(status_code=404, detail="Master not found")
     return data["values"]
+
