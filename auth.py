@@ -8,6 +8,9 @@ from schemas import UserRegister, UserLogin, TokenResponse, PreProfile, Register
 from config import settings
 from bson import ObjectId
 from fastapi.encoders import jsonable_encoder
+from typing import Optional
+from fastapi import Query
+
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -79,11 +82,30 @@ async def get_my_pre_profile(user=Depends(get_current_user)):
 # --- Get All Pre-Profiles (excluding current user) ---
 
 @router.get("/pre-profiles/all")
-async def get_all_pre_profiles(user=Depends(get_current_user)):
+async def get_all_pre_profiles(
+    search: Optional[str] = Query(None),
+    age: Optional[str] = Query(None),
+    religion: Optional[str] = Query(None),
+    location: Optional[str] = Query(None),
+    job: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+):
     current_user_id = str(user["_id"])
 
-    # Fetch all pre-profiles except the current user's
-    cursor = db["pre_profiles"].find({"user_id": {"$ne": current_user_id}})
+    filters = {"user_id": {"$ne": current_user_id}}  # Exclude self
+
+    if search:
+        filters["name"] = {"$regex": search, "$options": "i"}
+    if age:
+        filters["age"] = age
+    if religion:
+        filters["religion"] = religion
+    if location:
+        filters["location"] = location
+    if job:
+        filters["job"] = job
+
+    cursor = db["pre_profiles"].find(filters)
     pre_profiles = []
 
     async for profile in cursor:
