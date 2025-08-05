@@ -7,6 +7,8 @@ from jose import jwt, JWTError
 from fastapi.encoders import jsonable_encoder
 from bson import ObjectId
 from email_utils import send_profile_liked_email
+from typing import Optional,List
+from fastapi import Query
 
 router = APIRouter()
 security = HTTPBearer()
@@ -52,6 +54,19 @@ async def update_my_pre_profile(
 
     return jsonable_encoder(updated_profile)
 
+@router.delete("/pre-profile/image", tags=["PreProfile"])
+async def delete_profile_image(user=Depends(get_current_user)):
+    user_id = str(user["sub"])
+
+    result = await db["pre_profiles"].update_one(
+        {"user_id": user_id},
+        {"$unset": {"image": ""}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="No image found or already deleted")
+
+    return {"message": "Profile image deleted successfully"}
 
 
 
@@ -166,9 +181,22 @@ async def create_master(data: MasterData):
     return {"message": "Master created"}
 
 @router.get("/masters/{type}", tags=["Masters"])
-async def get_master(type: str):
-    data = await db["masters"].find_one({"type": type})
-    if not data:
+async def get_master(
+    type: str,
+    filter_key: Optional[str] = Query(None),
+    filter_value: Optional[str] = Query(None)
+):
+    doc = await db["masters"].find_one({"type": type})
+    if not doc:
         raise HTTPException(status_code=404, detail="Master not found")
-    return data["values"]
 
+    values = doc.get("values", [])
+
+    # If filtering is required (e.g., by country or religion)
+    if filter_key and filter_value:
+        # only keep items where item[filter_key] == filter_value
+        filtered = [v["name"] for v in values if isinstance(v, dict) and v.get(filter_key) == filter_value]
+        return filtered
+
+    # If no filtering, return values as-is
+    return values
