@@ -36,14 +36,22 @@ async def insert_master_data():
     await safe_insert("religion", ["Hindu", "Muslim", "Christian", "Sikh", "Jain", "Other"])
 
     await safe_insert("caste", [
-        {"name": "Brahmin", "religion": "Hindu"},
-        {"name": "Lingayata", "religion": "Hindu"},
-        {"name": "Vaishya", "religion": "Hindu"},
-        {"name": "Shudra", "religion": "Hindu"},
-        {"name": "Roman Catholic", "religion": "Christian"},
-        {"name": "Protestant", "religion": "Christian"},
-        {"name": "Other", "religion": "Other"},
-    ])
+    {"name": "Brahmin", "religion": "Hindu"},
+    {"name": "Lingayata", "religion": "Hindu"},
+    {"name": "Vaishya", "religion": "Hindu"},
+    {"name": "Shudra", "religion": "Hindu"},
+    {"name": "Kuruba", "religion": "Hindu"},
+    {"name": "Vokkaliga", "religion": "Hindu"},
+    {"name": "Idiga", "religion": "Hindu"},
+    {"name": "Billava", "religion": "Hindu"},
+    {"name": "Nayaka", "religion": "Hindu"},
+    {"name": "Devanga", "religion": "Hindu"},
+    {"name": "Madiga", "religion": "Hindu"},
+    {"name": "Holeya", "religion": "Hindu"},
+    {"name": "Roman Catholic", "religion": "Christian"},
+    {"name": "Protestant", "religion": "Christian"},
+    {"name": "Other", "religion": "Other"},
+])
 
     await safe_insert("job_sector", ["Government", "Private", "Business", "Defence", "Other"])
 

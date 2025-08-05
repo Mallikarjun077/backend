@@ -177,26 +177,33 @@ async def create_master(data: MasterData):
     existing = await db["masters"].find_one({"type": data.type})
     if existing:
         raise HTTPException(status_code=400, detail="Master type already exists")
+    
     await db["masters"].insert_one(data.dict())
-    return {"message": "Master created"}
+    return {"message": "Master created successfully"}
+
 
 @router.get("/masters/{type}", tags=["Masters"])
 async def get_master(
     type: str,
     filter_key: Optional[str] = Query(None),
-    filter_value: Optional[str] = Query(None)
+    filter_value: Optional[str] = Query(None),
+    return_full_object: bool = Query(False)
 ):
     doc = await db["masters"].find_one({"type": type})
     if not doc:
-        raise HTTPException(status_code=404, detail="Master not found")
+        raise HTTPException(status_code=404, detail="Master type not found")
 
     values = doc.get("values", [])
 
-    # If filtering is required (e.g., by country or religion)
+    # If filter is applied (e.g., filter_key = "religion", filter_value = "Hindu")
     if filter_key and filter_value:
-        # only keep items where item[filter_key] == filter_value
-        filtered = [v["name"] for v in values if isinstance(v, dict) and v.get(filter_key) == filter_value]
+        filter_value_lower = filter_value.lower()
+
+        filtered = [
+            v if return_full_object else v["name"]
+            for v in values
+            if isinstance(v, dict) and v.get(filter_key, "").lower() == filter_value_lower
+        ]
         return filtered
 
-    # If no filtering, return values as-is
     return values
